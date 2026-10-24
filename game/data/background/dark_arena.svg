@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="128" viewBox="0 0 256 128">
+  <defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#020309"/><stop offset=".55" stop-color="#090d1b"/><stop offset="1" stop-color="#020309"/></linearGradient></defs>
+  <path fill="url(#sky)" d="M0 0h256v128H0z"/>
+</svg>

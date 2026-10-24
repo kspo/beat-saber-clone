@@ -1,0 +1,40 @@
+[gd_scene load_steps=5 format=3 uid="uid://cplhsipk6vhem"]
+
+[ext_resource type="Script" path="res://game/BeepCube/BeepCube_SliceParticles.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="SparkMaterial"]
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 1, 1, 1)
+
+[sub_resource type="BoxMesh" id="SparkMesh"]
+material = SubResource("SparkMaterial")
+size = Vector3(0.009, 0.12, 0.009)
+
+[sub_resource type="Curve" id="Shrink"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.45, 0.75), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[node name="SliceParticles" type="Node3D"]
+script = ExtResource("1")
+
+[node name="Particles3D" type="CPUParticles3D" parent="."]
+layers = 3
+emitting = false
+amount = 40
+lifetime = 0.4
+one_shot = true
+explosiveness = 1.0
+randomness = 0.4
+local_coords = false
+fixed_fps = 36
+mesh = SubResource("SparkMesh")
+direction = Vector3(0, -1, 0)
+spread = 80.0
+gravity = Vector3(0, -1.4, 0)
+initial_velocity_min = 2.2
+initial_velocity_max = 5.0
+scale_amount_min = 0.65
+scale_amount_max = 1.0
+scale_amount_curve = SubResource("Shrink")
+particle_flag_align_y = true

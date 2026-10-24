@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Open Saber Uploader</title>
+	<link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+	<img src="/favicon.ico" />
+	<h1 class="title">Open Saber Song/Background Uploader</h1>
+	<h3 class="title">Upload songs directly into the game's songs folder (must be a zip file) or backgrounds into the game backgrounds folder (must be a jpeg or png file)</h3>
+	<p>A song ZIP must contain Info.dat, difficulty .dat files and Ogg Vorbis audio at its root. A ZIP containing only MP3 audio cannot be played; note maps are not generated automatically.</p>
+	<div class="upload-form">
+		<h3>Upload</h3>
+		<form action="/" method="post" enctype="multipart/form-data">
+			<input type="file" name="file" accept=".zip, .ZIP, .jpg, .jpeg, .png" required />
+			<br /><br />
+			<input type="submit" value="Upload" />
+		</form>
+	</div>
+</body>
+</html>

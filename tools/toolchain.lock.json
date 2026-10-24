@@ -1,0 +1,27 @@
+{
+  "godot": "4.6.stable",
+  "xr_vendors": "4.3.1-stable",
+  "files": {
+    "godot.zip": {
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.6-stable/Godot_v4.6-stable_macos.universal.zip",
+      "algorithm": "sha512",
+      "digest": "589ac663552253e93dc34d741bbc280f9e23e050f5cd79ec6bb8586d55114fbb71539d0e630d0af6c0f7fb4352e562a5b0666b3c7cb5d4bef9f7514fdce130ef"
+    },
+    "templates.tpz": {
+      "url": "https://github.com/godotengine/godot-builds/releases/download/4.6-stable/Godot_v4.6-stable_export_templates.tpz",
+      "algorithm": "sha512",
+      "digest": "88bb7c3a98e9a1e43c98796c99ac8a4ac8a82a15d8c9b049fe478e8e6a43522067559400f799949c1a43ecb1702a8eb02aa7bed506babccf177f0cb509088d19"
+    },
+    "vendors.zip": {
+      "url": "https://github.com/GodotVR/godot_openxr_vendors/releases/download/4.3.1-stable/godotopenxrvendorsaddon.zip",
+      "algorithm": "sha256",
+      "digest": "1620e9a589d205023e008ea27430843f5b8bb2690b62d08bd1fadc87c49b2e3e"
+    },
+    "gradle-8.11.1-bin.zip": {
+      "url": "https://services.gradle.org/distributions/gradle-8.11.1-bin.zip",
+      "algorithm": "sha256",
+      "digest": "f397b287023acdba1e9f6fc5ea72d22dd63669d59ed4a289a29b1a76eee151c6"
+    }
+  },
+  "gradle": "8.11.1"
+}
