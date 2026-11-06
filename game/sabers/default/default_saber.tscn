@@ -24,9 +24,10 @@ uv1_scale = Vector3(0, 1.725, 1)
 uv1_offset = Vector3(-1.25, 0.32, -0.195)
 
 [sub_resource type="CylinderMesh" id="2"]
-top_radius = 0.015
-bottom_radius = 0.015
+top_radius = 0.016
+bottom_radius = 0.014
 height = 0.15
+radial_segments = 20
 
 [sub_resource type="Animation" id="4"]
 resource_name = "Hide"

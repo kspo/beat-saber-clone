@@ -228,3 +228,12 @@ ROBOTO FONT:
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+================================================================================
+Third-party assets
+================================================================================
+
+Exo 2 typeface (game/data/fonts/Exo2-Variable.ttf, Exo2-Italic-Variable.ttf)
+Copyright 2013 The Exo 2 Project Authors (https://github.com/googlefonts/Exo-2.0)
+Licensed under the SIL Open Font License, Version 1.1.
+Full license text: game/data/fonts/OFL.txt

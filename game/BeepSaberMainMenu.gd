@@ -224,8 +224,9 @@ func _set_cur_playlist(songs: Array[MapInfo]) -> void:
 	
 	var map_index := 0
 	for map in songs:
+		# ItemList drops line breaks, so title and artist share one wrapped line.
 		@warning_ignore("return_value_discarded")
-		songs_menu.add_item("%s\n%s%s" % [map.song_name, map.song_author_name, "" if map.have_song else " [audio missing]"], default_song_icon)
+		songs_menu.add_item("%s  ·  %s%s" % [map.song_name, map.song_author_name, "" if map.have_song else "  [audio missing]"], default_song_icon)
 		songs_menu.set_item_tooltip(map_index, "%s\n%s\n%s" % [map.song_name, map.song_sub_name, map.song_author_name])
 		songs_menu.set_item_custom_fg_color(map_index, Color.YELLOW if PlayCount.is_favorite(map) else Color.WHITE)
 		_bg_img_loader.load_texture(map.filepath, map.cover_image_filename, _on_cover_loaded.bind(_list_revision), false, map_index)

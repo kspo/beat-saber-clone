@@ -12,10 +12,7 @@ func _ready() -> void:
 	$mesh_instance.hide()
 	$AnimationPlayer.stop()
 	if feedback_font == null:
-		feedback_font = FontVariation.new()
-		feedback_font.base_font = preload("res://OQ_Toolkit/OQ_UI2D/theme/Roboto-Medium.ttf")
-		feedback_font.variation_embolden = 0.7
-		feedback_font.variation_transform = Transform2D(Vector2(1, 0), Vector2(-0.24, 1), Vector2.ZERO)
+		feedback_font = preload("res://game/ui/RhythmMenuStyle.gd").title_font()
 	label = Label3D.new()
 	label.font = feedback_font
 	label.font_size = 80

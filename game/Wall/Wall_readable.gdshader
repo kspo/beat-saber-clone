@@ -19,13 +19,18 @@ void fragment() {
 	float edge_aa = max(fwidth(edge_distance), 0.001);
 	float edge = 1.0 - smoothstep(0.012 - edge_aa, 0.012 + edge_aa, edge_distance);
 	float rim = 1.0 - smoothstep(0.012, 0.075, edge_distance);
+	// Wider inner glow from the frame towards the centre (bloom stand-in).
+	float glow = exp2(-edge_distance * 26.0);
 	// One small shared, baked field: irregular electric contours instead of a
-	// regular grid. No runtime noise generation or extra transparent geometry.
-	float field = texture(fracture_field, face_position * 0.38).r;
+	// regular grid. A slow drift makes the contours crawl like live current.
+	vec2 uv = face_position * 0.38;
+	float field = texture(fracture_field, uv + vec2(0.0, TIME * 0.025)).r;
 	float contour_distance = abs(field - 0.5);
 	float contour_aa = max(fwidth(field), 0.002);
-	float fracture = (1.0 - smoothstep(0.003, 0.003 + contour_aa, contour_distance)) * (1.0 - rim);
-	ALBEDO = mix(albedo_color.rgb, vec3(1.0, 0.65, 0.68), edge * 0.45);
-	EMISSION = albedo_color.rgb * (0.12 + rim * 0.35 + edge * 1.1 + fracture * 0.45);
-	ALPHA = 0.035 + edge * 0.86 + rim * 0.065 + fracture * 0.22;
+	float fracture = (1.0 - smoothstep(0.003, 0.003 + contour_aa * 1.5, contour_distance)) * (1.0 - rim);
+	vec3 hot = mix(albedo_color.rgb, vec3(1.0), 0.6);
+	// Dark smoked-glass body; light lives only in the frame, glow and contours.
+	vec3 body = albedo_color.rgb * 0.06;
+	ALBEDO = body + albedo_color.rgb * (glow * 0.55 + fracture * 0.9) + hot * edge * 1.4;
+	ALPHA = clamp(0.42 + edge * 0.58 + glow * 0.25 + fracture * 0.35, 0.0, 1.0);
 }

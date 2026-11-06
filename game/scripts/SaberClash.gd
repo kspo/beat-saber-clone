@@ -4,32 +4,15 @@ class_name SaberClash
 const PULSE_INTERVAL := 0.12
 var cooldown := 0.0
 var touching := false
-var sparks := CPUParticles3D.new()
+# Hot, slightly warm white so blade contact reads apart from coloured cut sparks.
+var sparks := SparkVfx.make_streaks(30, 180.0, 1.6, 4.5)
+var flash := SparkVfx.make_flash(0.3, 0.1)
 
 func _ready() -> void:
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color(1.0, 0.95, 0.75)
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.009, 0.09, 0.009)
-	mesh.material = material
-	sparks.mesh = mesh
-	sparks.emitting = false
-	sparks.amount = 32
-	sparks.lifetime = 0.28
-	sparks.one_shot = true
-	sparks.explosiveness = 1.0
-	sparks.local_coords = false
-	sparks.fixed_fps = 36
-	sparks.spread = 180.0
-	sparks.gravity = Vector3(0, -2, 0)
-	sparks.initial_velocity_min = 1.8
-	sparks.initial_velocity_max = 3.8
-	sparks.scale_amount_min = 0.65
-	sparks.scale_amount_max = 1.0
-	sparks.particle_flag_align_y = true
-	sparks.layers = 3
+	SparkVfx.set_tint(sparks, Color(1.0, 0.82, 0.45), 0.2)
+	SparkVfx.set_tint(flash, Color(1.0, 0.85, 0.6), 0.3)
 	add_child(sparks)
+	add_child(flash)
 
 func update_contact(left: LightSaber, right: LightSaber, delta: float, enabled: bool) -> void:
 	cooldown = maxf(0.0, cooldown - delta)
@@ -53,6 +36,9 @@ func update_contact(left: LightSaber, right: LightSaber, delta: float, enabled: 
 	sparks.global_position = (points[0] + points[1]) * 0.5
 	sparks.restart()
 	sparks.emitting = true
+	flash.global_position = sparks.global_position
+	flash.restart()
+	flash.emitting = true
 	for controller in [left.controller, right.controller]:
 		# Preserve stronger note-cut feedback already in progress.
 		if not controller.is_simple_rumbling():
@@ -63,3 +49,4 @@ func reset() -> void:
 	cooldown = 0.0
 	sparks.emitting = false
 	sparks.visible = false
+	flash.emitting = false

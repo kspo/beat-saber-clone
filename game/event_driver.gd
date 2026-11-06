@@ -47,10 +47,41 @@ var right_color: Color
 
 @export var disabled := false
 
+const NEON_GLOW_SHADER := preload("res://game/NeonGlow.gdshader")
+# Halo materials chained as next_pass on each laser group's core material,
+# indexed by EventInfo light type. Their colour follows every light event.
+var _glow_materials: Array[ShaderMaterial] = [null, null, null, null, null]
+
+# Atmosphere: fog, ambient light, backdrop haze and a stage back-light follow
+# the current light colours, so the whole arena is tinted by the light show.
+const BASE_FOG := Color(0.008, 0.022, 0.055)
+const BASE_AMBIENT := Color(0.62, 0.70, 0.85)
+# Contribution of each light group to the atmosphere (diag, square, left, right, floor).
+const ATMOSPHERE_WEIGHTS: Array[float] = [0.35, 0.3, 0.25, 0.25, 0.2]
+var _light_levels: Array[Color] = [Color.BLACK, Color.BLACK, Color.BLACK, Color.BLACK, Color.BLACK]
+var _environment: Environment
+var _stage_light := DirectionalLight3D.new()
+
 func _ready() -> void:
 	for node in $Level.find_children("*", "Node3D", true, false):
 		_initial_transforms[node] = node.transform
 	track_lights_holder.hide()
+	_attach_glow(EventInfo.TYPE_DIAGONAL_LASERS, diagonal_lasers_material, 0.45, 0.85)
+	_attach_glow(EventInfo.TYPE_SQUARE_LASERS, square_lasers_material, 0.40, 0.80)
+	_attach_glow(EventInfo.TYPE_LEFT_WAVING_LASERS, left_waving_lasers_material, 0.40, 0.80)
+	_attach_glow(EventInfo.TYPE_RIGHT_WAVING_LASERS, right_waving_lasers_material, 0.40, 0.80)
+	_attach_glow(EventInfo.TYPE_FLOOR_LIGHTS, track_lights_material, 0.30, 0.70)
+	
+	_stage_light.name = "StageBackLight"
+	# Shines from deep in the stage towards the player: colours note rims/edges.
+	_stage_light.rotation = Vector3(deg_to_rad(-18.0), deg_to_rad(180.0), 0.0)
+	_stage_light.shadow_enabled = false
+	_stage_light.light_energy = 0.0
+	_stage_light.light_specular = 0.6
+	add_child(_stage_light)
+	var world := get_tree().get_first_node_in_group(&"enviroment") as WorldEnvironment
+	if world != null and world.environment != null:
+		_environment = world.environment
 	
 	set_background_texture()
 	
@@ -343,8 +374,44 @@ func fade_light(type: int, from: Color, to: Color, turn_off_after_fade: bool, tr
 		tween.kill()
 		_on_Tween_tween_step(Color.BLACK, type)
 
+func _attach_glow(type: int, core: StandardMaterial3D, radius: float, intensity: float) -> void:
+	# Beam meshes are 0.1 m boxes along local Z; the shell must cover the radius.
+	var glow := ShaderMaterial.new()
+	glow.shader = NEON_GLOW_SHADER
+	glow.set_shader_parameter(&"glow_radius", radius)
+	glow.set_shader_parameter(&"intensity", intensity)
+	glow.set_shader_parameter(&"expand", radius / 0.05 * 1.05)
+	glow.set_shader_parameter(&"axis", Vector3(0, 0, 1))
+	glow.set_shader_parameter(&"half_length", 16.0)
+	glow.set_shader_parameter(&"distance_fade", 0.012)
+	glow.set_shader_parameter(&"core_radius", 0.045)
+	glow.set_shader_parameter(&"core_intensity", 0.9)
+	glow.set_shader_parameter(&"color", Color.BLACK)
+	core.next_pass = glow
+	_glow_materials[type] = glow
+
 func _on_Tween_tween_step(value: Color, id: int) -> void:
 	sphere_material.set_shader_parameter("bg_%d_intensity"%id,value.v)
+	if id >= 0 and id < _glow_materials.size() and _glow_materials[id] != null:
+		_glow_materials[id].set_shader_parameter(&"color", value)
+	if id >= 0 and id < _light_levels.size():
+		_light_levels[id] = value
+		_update_atmosphere()
+
+func _update_atmosphere() -> void:
+	var mix_color := Color.BLACK
+	for i in _light_levels.size():
+		var c := _light_levels[i]
+		mix_color += Color(c.r, c.g, c.b) * ATMOSPHERE_WEIGHTS[i]
+	var level := clampf(maxf(mix_color.r, maxf(mix_color.g, mix_color.b)), 0.0, 1.5)
+	var hue := mix_color / maxf(level, 0.001) if level > 0.001 else Color.BLACK
+	var haze := BASE_FOG + Color(hue.r, hue.g, hue.b) * 0.065 * minf(level, 1.0)
+	sphere_material.set_shader_parameter(&"haze_color", haze)
+	_stage_light.light_color = Color(hue.r, hue.g, hue.b).lerp(Color.WHITE, 0.15)
+	_stage_light.light_energy = 0.9 * minf(level, 1.2)
+	if _environment != null:
+		_environment.fog_light_color = haze
+		_environment.ambient_light_color = BASE_AMBIENT.lerp(Color(hue.r, hue.g, hue.b), 0.35 * minf(level, 1.0))
 
 func active_tweens() -> Array[Tween]:
 	var result: Array[Tween] = prev_tweeners.duplicate()

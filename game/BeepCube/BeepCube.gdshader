@@ -2,9 +2,9 @@ shader_type spatial;
 render_mode cull_disabled, diffuse_burley, specular_schlick_ggx;
 
 uniform vec4 color : source_color = vec4(0.9, 0.1, 0.16, 1.0);
-uniform float metallic = 0.08;
-uniform float roughness = 0.30;
-uniform float sub_emission_energy = 0.025;
+uniform float metallic = 0.22;
+uniform float roughness = 0.20;
+uniform float sub_emission_energy = 0.06;
 uniform bool cutted = false;
 uniform float cut_vanish = 0.0;
 uniform float cut_white_margin = 0.018;
@@ -54,16 +54,29 @@ void fragment() {
 	}
 	// Derivative AA preserves the mark at different render scales and viewing distances.
 	float coverage = 1.0 - smoothstep(-max(fwidth(distance_field), 0.002), max(fwidth(distance_field), 0.002), distance_field);
-	float icon = coverage * face * float(is_dot || arrows_enabled);
-	// Small surface halo remains visible on Quest even with bloom disabled.
-	// Confined to this material: no transparent shells or fullscreen glow pass.
-	float halo = exp2(-max(distance_field, 0.0) * 42.0) * (1.0 - coverage) * face * float(is_dot || arrows_enabled);
-	// Body illumination comes from scene lights, not a painted front-face glow.
-	float lacquer = 0.82 * (1.0 - 0.40 * groove);
+	float mark_on = face * float(is_dot || arrows_enabled);
+	float icon = coverage * mark_on;
+	// Two-stage halo (tight bloom + wide tinted spill) stays on the note surface,
+	// so it reads without the fullscreen glow pass that Quest disables.
+	float outside = max(distance_field, 0.0);
+	float halo = (exp2(-outside * 42.0) * 0.75 + exp2(-outside * 9.0) * 0.30) * (1.0 - coverage) * mark_on;
+	// Bevels are the only non axis-aligned normals on the mesh: light them as a
+	// neon outline. The inner groove adds a second, thinner contour.
+	float axis_alignment = max(n.x, max(n.y, n.z));
+	float bevel = 1.0 - smoothstep(0.80, 0.93, axis_alignment);
+	float edge_band = smoothstep(-0.10, -0.015, panel_distance);
+	// Grazing-angle rim keeps silhouettes crisp against the dark stage.
+	float rim = pow(1.0 - clamp(dot(normalize(NORMAL), normalize(VIEW)), 0.0, 1.0), 3.0);
+	// Deep lacquer body, slightly darker towards the face centre for depth.
+	float vignette = mix(0.62, 1.0, smoothstep(0.15, 0.95, length(panel_position) * 0.75));
+	float lacquer = 0.50 * vignette * (1.0 - 0.45 * groove);
+	vec3 neon = mix(color.rgb, vec3(1.0), 0.12);
 	ALBEDO = mix(color.rgb * lacquer, vec3(1.0), icon);
 	METALLIC = metallic * (1.0 - icon);
-	ROUGHNESS = mix(roughness, 0.38, groove);
-	EMISSION = color.rgb * (sub_emission_energy + 0.60 * halo) + vec3(3.2) * icon;
+	ROUGHNESS = mix(roughness, 0.42, groove);
+	EMISSION = color.rgb * (sub_emission_energy + 0.30 * rim + 0.22 * groove + 0.55 * halo)
+		+ neon * (0.95 * bevel + 0.12 * edge_band * (1.0 - bevel))
+		+ vec3(3.2) * icon;
 	if (is_chain_head) EMISSION += vec3(1.0 - smoothstep(cut_white_margin, cut_white_margin + 0.01, chain_interp));
 	if (cutted) EMISSION += vec3(1.0 - smoothstep(cut_white_margin, cut_white_margin + 0.01, cut_interp));
 	if (!FRONT_FACING) {

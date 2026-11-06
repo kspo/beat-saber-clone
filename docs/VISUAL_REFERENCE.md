@@ -95,3 +95,46 @@ creation, GPU turbulence, alpha shells or light spawning.
 parent behavior, pause and track-clear cleanup. Actual rendered appearance and
 Quest CPU/GPU cost still require a new APK and device review. Existing two-resource
 exit warning remains; no new script errors were reported.
+
+## Neon stage pass — 2026-11-07
+
+Goal: genre-typical "neon arena" feel without fullscreen bloom (disabled on Quest).
+
+- `game/NeonGlow.gdshader`: analytic light-tube halo. The beam mesh is inflated
+  around its axis; each fragment computes the ray-to-segment distance to the
+  beam centre and applies an additive falloff. One pass, no textures, no depth
+  writes. Attached as `next_pass` of every stage laser group (colour follows all
+  light events through `_on_Tween_tween_step`) and as `material_overlay` on saber
+  blades (segment length tracks the blade show/hide animation).
+- Notes: deeper lacquer body, neon bevel outline derived from bevel normals,
+  grazing-angle rim, face vignette, two-stage tinted halo around the mark.
+- Stage: metallic dark ring frames, blue depth fog (backdrop sphere excluded),
+  distance-faded laser halos.
+- Menu: saturated cyan selection with white text, glass panels with lit top edge
+  and soft glow, static fixed-seed star dust, song rows show `Title · Artist`
+  (ItemList drops line breaks).
+- Previews: `tools/stage_preview.tscn` (player-eye gameplay frame) and
+  `tools/menu_preview.tscn` (flat menu render), both take `-- out.png`.
+
+Validation: 328 headless checks pass; previews rendered on macOS (Metal, Forward
+Mobile). Quest GPU frame time with the additive halos is not yet measured on device.
+
+## Arena feel pass — 2026-11-07 (second iteration)
+
+- Atmosphere: `event_driver.gd` mixes the live light-group colours into fog colour,
+  ambient light, a horizon-weighted backdrop haze and a shadowless stage
+  back-light (colours note rims). Updated on every light event/tween step.
+- Lasers and blades: `NeonGlow.gdshader` gained a white-hot core term
+  (`core_radius`, `core_intensity`) scaled by the light level.
+- Saber: wide white core shader, stronger halo, procedural metal hilt with a
+  coloured emitter ring (`SaberHilt.gdshader`), additive trail ribbon with a hot
+  leading edge (`SaberTrail.gdshader`).
+- Impacts: `game/vfx/SparkVfx.gd` builds hot streak sparks, slow embers and an
+  additive flash (CPU particles). Cut = directional spray (40) + radial burst (20)
+  + embers (12) + flash; saber clash = warm streaks (30) + flash.
+- Obstacles: smoked-glass body, white-hot frame, inner glow, drifting contours.
+- Typography: Exo 2 (SIL OFL 1.1, `game/data/fonts/`, attribution in LICENSE)
+  for menus and HUD; heavy italic for titles, PLAY and hit scores.
+
+Validation: 328 headless checks pass; desktop renders via `tools/stage_preview.tscn`
+and `tools/menu_preview.tscn`. Quest frame time still to be confirmed on device.

@@ -5,6 +5,23 @@ extends RefCounted
 const CYAN := Color("27bfff")
 const INK := Color("091321")
 const MUTED := Color("9caec3")
+const UPRIGHT_FONT := preload("res://game/data/fonts/Exo2-Variable.ttf")
+const ITALIC_FONT := preload("res://game/data/fonts/Exo2-Italic-Variable.ttf")
+static var _fonts := {}
+
+## Exo 2 (SIL OFL) at a given weight; italic heavy weights are used for titles.
+static func font(weight: int = 500, italic: bool = false) -> FontVariation:
+	var key := Vector2i(weight, int(italic))
+	if not _fonts.has(key):
+		var variation := FontVariation.new()
+		variation.base_font = ITALIC_FONT if italic else UPRIGHT_FONT
+		var tag := TextServerManager.get_primary_interface().name_to_tag("wght")
+		variation.variation_opentype = {tag: weight}
+		_fonts[key] = variation
+	return _fonts[key]
+
+static func title_font() -> FontVariation:
+	return font(800, true)
 
 static func box(fill: Color, line: Color = Color.TRANSPARENT, border: int = 0) -> StyleBoxFlat:
 	var style := StyleBoxFlat.new()
@@ -18,15 +35,29 @@ static func box(fill: Color, line: Color = Color.TRANSPARENT, border: int = 0) -
 	style.content_margin_bottom = 5
 	return style
 
+## Floating glass slab: translucent body, lit top edge and a soft cyan drop glow.
+static func glass_panel() -> StyleBoxFlat:
+	var style := box(Color(0.022, 0.05, 0.085, 0.9), Color(0.25, 0.7, 0.95, 0.22), 1)
+	style.border_width_top = 2
+	style.border_color = Color(0.3, 0.78, 1.0, 0.45)
+	style.set_corner_radius_all(10)
+	style.shadow_color = Color(0.0, 0.35, 0.65, 0.16)
+	style.shadow_size = 12
+	style.anti_aliasing = true
+	return style
+
 static func make_theme() -> Theme:
 	var result := Theme.new()
-	result.default_font = preload("res://OQ_Toolkit/OQ_UI2D/theme/Roboto-Medium.ttf")
+	result.default_font = font(500)
 	result.default_font_size = 22
 	var idle := box(Color(0.035, 0.075, 0.12, 0.88))
-	var hover := box(Color("16496b"), CYAN, 1)
-	var selected := box(Color("e0f7ff"), Color("84e8ff"), 1)
-	selected.shadow_color = Color(0.1, 0.65, 1.0, 0.18)
-	selected.shadow_size = 5
+	var hover := box(Color("12405f"), CYAN, 1)
+	hover.shadow_color = Color(0.1, 0.65, 1.0, 0.16)
+	hover.shadow_size = 4
+	# Saturated neon selection with light text, matching the PLAY call to action.
+	var selected := box(Color("1592d0"), Color("7fe6ff"), 1)
+	selected.shadow_color = Color(0.1, 0.65, 1.0, 0.35)
+	selected.shadow_size = 8
 	var focus := box(Color.TRANSPARENT, Color("b4e9ff"), 1)
 	for kind in ["Button", "OptionButton", "CheckButton"]:
 		result.set_stylebox("normal", kind, idle)
@@ -37,23 +68,23 @@ static func make_theme() -> Theme:
 		result.set_stylebox("disabled", kind, box(Color("0a1521")))
 		result.set_color("font_color", kind, Color("edf5ff"))
 		result.set_color("font_hover_color", kind, Color.WHITE)
-		result.set_color("font_pressed_color", kind, INK)
+		result.set_color("font_pressed_color", kind, Color.WHITE)
 		result.set_color("font_disabled_color", kind, Color("56677c"))
 	result.set_color("font_color", "Label", Color("edf5ff"))
-	result.set_stylebox("panel", "Panel", box(Color(0.025, 0.055, 0.09, 0.94), Color(0.22, 0.55, 0.75, 0.22), 1))
+	result.set_stylebox("panel", "Panel", glass_panel())
 	result.set_stylebox("panel", "ItemList", box(Color(0.02, 0.04, 0.07, 0.25)))
 	result.set_stylebox("selected", "ItemList", selected)
 	result.set_stylebox("selected_focus", "ItemList", selected)
 	result.set_stylebox("hovered", "ItemList", hover)
 	result.set_stylebox("focus", "ItemList", focus)
 	result.set_color("font_color", "ItemList", Color("e9f1fb"))
-	result.set_color("font_selected_color", "ItemList", INK)
+	result.set_color("font_selected_color", "ItemList", Color.WHITE)
 	result.set_constant("v_separation", "ItemList", 8)
 	result.set_constant("h_separation", "ItemList", 12)
 	result.set_constant("icon_margin", "ItemList", 12)
 	result.set_stylebox("panel", "PopupMenu", box(INK, CYAN, 1))
 	result.set_stylebox("hover", "PopupMenu", selected)
-	result.set_color("font_hover_color", "PopupMenu", INK)
+	result.set_color("font_hover_color", "PopupMenu", Color.WHITE)
 	result.set_color("font_color", "PopupMenu", Color.WHITE)
 	result.set_stylebox("scroll", "VScrollBar", box(Color("122337")))
 	result.set_stylebox("grabber", "VScrollBar", box(Color("467895")))
@@ -92,8 +123,9 @@ static func place(node: Control, rect: Rect2) -> void:
 	node.position = rect.position
 	node.size = rect.size
 
-static func label(menu: Control, title: String, rect: Rect2, font_size: int, tint: Color = Color.WHITE, node_name: String = "") -> Label:
+static func label(menu: Control, title: String, rect: Rect2, font_size: int, tint: Color = Color.WHITE, node_name: String = "", heavy: bool = false) -> Label:
 	var item := Label.new()
+	if heavy: item.add_theme_font_override("font", title_font())
 	if not node_name.is_empty(): item.name = node_name
 	item.text = title
 	item.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -121,6 +153,7 @@ static func apply(menu: Control) -> void:
 	menu.add_child(discover)
 	place(discover, Rect2(940, 24, 306, 44))
 	discover.add_theme_stylebox_override("normal", box(Color("0d4360"), CYAN, 1))
+	discover.add_theme_font_override("font", title_font())
 	backdrop(menu, Rect2(16, 84, 268, 468))
 	backdrop(menu, Rect2(300, 84, 592, 468))
 	backdrop(menu, Rect2(908, 84, 484, 468))
@@ -128,19 +161,19 @@ static func apply(menu: Control) -> void:
 	menu.add_child(atmosphere)
 	menu.move_child(atmosphere, 0)
 	place(atmosphere, Rect2(0, 0, 1408, 640))
-	label(menu, "OPEN", Rect2(40, 12, 90, 36), 28, Color("ff657b"))
-	label(menu, "SABER", Rect2(126, 12, 130, 36), 28, CYAN)
+	label(menu, "OPEN", Rect2(40, 10, 90, 38), 30, Color("ff657b"), "", true)
+	label(menu, "SABER", Rect2(126, 10, 130, 38), 30, CYAN, "", true)
 	label(menu, "FIND YOUR RHYTHM", Rect2(40, 48, 230, 22), 14, MUTED)
-	var heading := label(menu, "SOLO", Rect2(320, 10, 550, 36), 30)
+	var heading := label(menu, "SOLO", Rect2(320, 8, 550, 38), 32, Color.WHITE, "", true)
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var subtitle := label(menu, "YOUR MUSIC. YOUR MOMENT.", Rect2(320, 46, 550, 22), 14, Color("8edfff"))
 	subtitle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label(menu, "PLAYER SETUP", Rect2(32, 96, 186, 36), 20, MUTED)
-	label(menu, "CHOOSE YOUR DIFFICULTY", Rect2(928, 358, 420, 24), 16, CYAN)
-	label(menu, "Select a song", Rect2(1100, 116, 268, 82), 28, Color.WHITE, "SongTitle_Label")
+	label(menu, "PLAYER SETUP", Rect2(32, 96, 186, 36), 20, MUTED, "", true)
+	label(menu, "CHOOSE YOUR DIFFICULTY", Rect2(928, 358, 420, 24), 16, CYAN, "", true)
+	label(menu, "Select a song", Rect2(1100, 116, 268, 82), 28, Color.WHITE, "SongTitle_Label", true)
 	label(menu, "", Rect2(1100, 204, 268, 60), 18, MUTED, "Artist_Label")
-	label(menu, "NOW SELECTED", Rect2(928, 96, 400, 20), 14, CYAN)
-	label(menu, "YOUR LIBRARY", Rect2(316, 96, 310, 28), 19, Color.WHITE, "LibraryCount_Label")
+	label(menu, "NOW SELECTED", Rect2(928, 96, 400, 20), 14, CYAN, "", true)
+	label(menu, "YOUR LIBRARY", Rect2(316, 96, 310, 28), 19, Color.WHITE, "LibraryCount_Label", true)
 	for name in ["SongTitle_Label", "Artist_Label"]:
 		var title := menu.get_node(name) as Label
 		title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -207,7 +240,8 @@ static func apply(menu: Control) -> void:
 	(menu.get_node("LoadPlaylists_Button") as Button).text = "Refresh songs"
 	var play := menu.get_node("Play_Button") as Button
 	play.text = "PLAY  ›"
-	play.add_theme_font_size_override("font_size", 28)
+	play.add_theme_font_size_override("font_size", 30)
+	play.add_theme_font_override("font", title_font())
 	var play_style := box(Color("008acb"), Color("58dfff"), 2)
 	play_style.shadow_color = Color(0.0, 0.6, 1.0, 0.28)
 	play_style.shadow_size = 7

@@ -1,7 +1,7 @@
 extends Node3D
 class_name SaberTail
 
-@onready var material := ($Mesh as MeshInstance3D).material_override as StandardMaterial3D
+@onready var material := ($Mesh as MeshInstance3D).material_override as ShaderMaterial
 @onready var imm_geo := ($Mesh as MeshInstance3D).mesh as ImmediateMesh
 
 @export var size := 1.0
@@ -17,8 +17,7 @@ func clear_history() -> void:
 	imm_geo.clear_surfaces()
 
 func set_color(color: Color) -> void:
-	material.albedo_color = color
-	material.emission = color
+	material.set_shader_parameter(&"color", color)
 
 class HistoricalPositions:
 	extends RefCounted

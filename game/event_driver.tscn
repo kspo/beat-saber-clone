@@ -12,7 +12,7 @@
 
 [sub_resource type="Shader" id="4"]
 code = "shader_type spatial;
-render_mode unshaded;
+render_mode unshaded, fog_disabled;
 
 uniform sampler2D bg_base;
 uniform sampler2D bg_0;
@@ -36,6 +36,13 @@ uniform lowp float bg_1_intensity_mult = 1.0;
 uniform lowp float bg_2_intensity_mult = 1.0;
 uniform lowp float bg_3_intensity_mult = 1.0;
 uniform lowp float bg_4_intensity_mult = 1.0;
+// Light-show tinted haze; strongest at the horizon, like light scattered in fog.
+uniform vec4 haze_color : source_color = vec4(0.012, 0.03, 0.07, 1.0);
+varying float elevation;
+
+void vertex() {
+	elevation = normalize(VERTEX).y;
+}
 
 vec3 get_from_map(sampler2D maptx, vec2 uv, float intensity, vec3 albedo, vec4 tint){
 	vec3 map = texture(maptx,uv).rgb;
@@ -53,6 +60,8 @@ void fragment(){
 	if (bg_3_intensity>0.0){ALBEDO = get_from_map(bg_3, xinv_uv, (bg_3_intensity*bg_3_intensity_mult), ALBEDO, bg_3_tint);}
 	if (bg_4_intensity>0.0){ALBEDO = get_from_map(bg_4, xinv_uv, (bg_4_intensity*bg_4_intensity_mult), ALBEDO, bg_4_tint);}
 	ALBEDO.rgb = vec3(pow(ALBEDO.r, contrast), pow(ALBEDO.g, contrast), pow(ALBEDO.b, contrast));
+	float horizon = exp2(-abs(elevation) * 6.0);
+	ALBEDO = ALBEDO * 0.45 + haze_color.rgb * (0.5 + 2.6 * horizon);
 }"
 
 [sub_resource type="ShaderMaterial" id="5"]
@@ -243,7 +252,7 @@ albedo_color = Color(0.992157, 0, 1, 1)
 
 [sub_resource type="Gradient" id="16"]
 offsets = PackedFloat32Array(0, 0.660256, 1)
-colors = PackedColorArray(0, 0, 0, 1, 0.0729167, 0.0729167, 0.0729167, 1, 0, 0, 0, 1)
+colors = PackedColorArray(0.015, 0.015, 0.015, 1, 0.14, 0.14, 0.14, 1, 0.03, 0.03, 0.03, 1)
 
 [sub_resource type="GradientTexture2D" id="17"]
 gradient = SubResource("16")
@@ -261,6 +270,14 @@ albedo_texture = SubResource("17")
 [sub_resource type="StandardMaterial3D" id="20"]
 shading_mode = 0
 albedo_color = Color(0.0941176, 0.0941176, 0.0941176, 1)
+
+[sub_resource type="StandardMaterial3D" id="RingMaterial_metal"]
+albedo_color = Color(0.03, 0.036, 0.055, 1)
+metallic = 0.85
+roughness = 0.3
+rim_enabled = true
+rim = 0.35
+rim_tint = 0.2
 
 [sub_resource type="Animation" id="21"]
 length = 2.0
@@ -964,79 +981,79 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, -4)
 [node name="ring" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -7)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring2" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -11)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring3" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -15)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring4" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -19)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring5" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -23)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring6" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -27)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring7" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -31)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring8" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -35)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring9" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -39)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring10" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -43)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring11" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -47)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring12" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -51)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="ring13" type="MeshInstance3D" parent="Level/rings"]
 transform = Transform3D(1.64568e-13, 1.01011e-06, 6.2, 6.2, -1.01011e-06, 0, 1.01011e-06, 6.2, -1.01011e-06, 0, 0, -55)
 layers = 3
-material_override = SubResource("20")
+material_override = SubResource("RingMaterial_metal")
 mesh = ExtResource("3")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Level/rings"]

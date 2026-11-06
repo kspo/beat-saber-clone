@@ -5,6 +5,14 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 func _draw() -> void:
+	# Fixed-seed star dust; drawn once per redraw, never animated per frame.
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7_310_221
+	for i in 140:
+		var point := Vector2(rng.randf_range(0.0, size.x), rng.randf_range(0.0, size.y))
+		var brightness := rng.randf_range(0.18, 0.7)
+		var tint := Color(0.55, 0.85, 1.0, brightness) if rng.randf() < 0.8 else Color(1.0, 0.55, 0.65, brightness)
+		draw_circle(point, rng.randf_range(0.7, 1.7), tint)
 	# Soft stage lighting behind the floating panels.
 	for i in range(12, 0, -1):
 		var radius := float(i) * 23.0

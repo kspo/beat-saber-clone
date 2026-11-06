@@ -19,6 +19,8 @@ func _ready() -> void:
 	if combo_mesh:
 		combo_scale = combo_mesh.scale
 		combo_mesh.mesh = combo_mesh.mesh.duplicate()
+		# TextMesh triangulates glyph outlines; variable fonts (overlapping
+		# contours) fail there, so the 3D combo keeps the static Roboto face.
 		var font := FontVariation.new()
 		font.base_font = preload("res://OQ_Toolkit/OQ_UI2D/theme/Roboto-Medium.ttf")
 		font.variation_transform = Transform2D(Vector2(1, 0), Vector2(-0.24, 1), Vector2.ZERO)
