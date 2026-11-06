@@ -39,6 +39,42 @@ size_flags_vertical = 3
 layout_mode = 2
 text = "Highscores (Hard)"
 
+[node name="SongHeading" type="Label" parent="Margin/VBox"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
+[node name="Columns" type="HBoxContainer" parent="Margin/VBox"]
+layout_mode = 2
+
+[node name="Rank" type="Label" parent="Margin/VBox/Columns"]
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+text = "#"
+
+[node name="Player" type="Label" parent="Margin/VBox/Columns"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Player"
+
+[node name="Score" type="Label" parent="Margin/VBox/Columns"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+text = "Score"
+horizontal_alignment = 2
+
+[node name="Date" type="Label" parent="Margin/VBox/Columns"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+text = "Date (UTC)"
+horizontal_alignment = 2
+
+[node name="EmptyMessage" type="Label" parent="Margin/VBox"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+autowrap_mode = 3
+
 [node name="LeftRight" type="HBoxContainer" parent="Margin/VBox"]
 layout_mode = 2
 size_flags_horizontal = 3

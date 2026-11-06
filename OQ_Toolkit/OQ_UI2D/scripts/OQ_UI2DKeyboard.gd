@@ -33,6 +33,11 @@ func _on_enter() -> void:
 	emit_signal("text_input_enter", _text_edit.text)
 	_text_edit.text = ""
 
+func _on_clear() -> void:
+	_keyboard.cancel_held_keys()
+	_text_edit.clear()
+	_on_TextEdit_text_changed()
+	_text_edit.grab_focus()
 
 func _ready() -> void:
 	#_text_edit = $OQ_UI2DCanvas_TextInput.find_child("TextEdit", true, false) as TextEdit
@@ -46,6 +51,7 @@ func _ready() -> void:
 	_text_edit.add_theme_stylebox_override("focus", style.box(Color.TRANSPARENT, Color("5cdfff"), 2))
 	_text_edit.placeholder_text = "Buraya yaz…"
 	_keyboard.set_cancelable(cancelable)
+	_keyboard.clear_pressed.connect(_on_clear)
 	
 	# force update of things that based on the text input
 	#  * enable/disable enter key based on min char length
@@ -59,6 +65,7 @@ func _show() -> void:
 	_text_edit.grab_focus()
 	
 func _hide() -> void:
+	_keyboard.cancel_held_keys()
 	visible = false
 
 func _on_TextEdit_text_changed() -> void:

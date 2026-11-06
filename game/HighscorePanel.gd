@@ -11,6 +11,8 @@ signal close()
 @onready var _song_info = $Margin/VBox/LeftRight/VBox/SongInfo_Label
 @onready var _exit_button = $Margin/VBox/Exit_Button
 @onready var _song_info_panel = $Margin/VBox/LeftRight/VBox
+@onready var _song_heading: Label = $Margin/VBox/SongHeading
+@onready var _empty_message: Label = $Margin/VBox/EmptyMessage
 
 func _ready() -> void:
 	preload("res://game/ui/RhythmMenuStyle.gd").apply_secondary(self)
@@ -26,7 +28,8 @@ func load_highscores(map_info: MapInfo, diff_rank: int) -> void:
 	diff_rank = HighscoreTable.get_rank_key(diff_rank)
 	
 	# populate title text
-	set_title("Highscores (%s)" % _get_difficulty_name(map_info,diff_rank))
+	set_title("LOCAL LEADERBOARD · TOP 10")
+	_song_heading.text = "%s — %s\n%s" % [map_info.song_name, map_info.song_author_name, _get_difficulty_name(map_info, diff_rank)]
 	
 	# populate song info
 	_song_info.text = """Artist: %s
@@ -36,6 +39,9 @@ func load_highscores(map_info: MapInfo, diff_rank: int) -> void:
 	# TODO populate song artwork
 	
 	var records := Highscores.get_records(map_info,diff_rank)
+	_empty_message.visible = records.is_empty()
+	_empty_message.text = "No saved scores for this song and settings yet."
+	($Margin/VBox/LeftRight/ScrollContainer as ScrollContainer).scroll_vertical = 0
 	var idx = 1
 	for record in records:
 		# Construct owned children explicitly. Duplicating a detached scene row
@@ -52,8 +58,16 @@ func load_highscores(map_info: MapInfo, diff_rank: int) -> void:
 		name_label.text = str(record.player_name)
 		new_row.add_child(name_label)
 		var score_label := Label.new()
+		score_label.custom_minimum_size.x = 120
+		score_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 		score_label.text = str(int(record.score))
 		new_row.add_child(score_label)
+		var date_label := Label.new()
+		date_label.custom_minimum_size.x = 150
+		date_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		date_label.add_theme_font_size_override("font_size", 18)
+		date_label.text = Time.get_date_string_from_unix_time(int(record.epoch_time)) if record.has("epoch_time") else "—"
+		new_row.add_child(date_label)
 		
 		_highscore_list.add_child(new_row)
 		idx += 1

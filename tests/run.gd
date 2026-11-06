@@ -505,12 +505,35 @@ func test_saved_highscore_rows(info: MapInfo, diff: DifficultyInfo) -> void:
 		panel.load_highscores(info, diff.difficulty_rank)
 		check(panel._highscore_list.get_child_count() == 1, "saved score replaces rows without accumulating old rows")
 		var row := panel._highscore_list.get_child(0)
-		check(row.get_child_count() == 3, "saved score row retains rank name and score after scene cleanup")
-		if row.get_child_count() == 3:
+		check(row.get_child_count() == 4, "saved score row retains rank name score and date after scene cleanup")
+		if row.get_child_count() == 4:
 			check(row.get_child(1).text == "Saved player" and row.get_child(2).text == "173308", "JSON-reloaded score renders player and integer score")
+			check(row.get_child(3).text == "2026-10-24", "saved score displays UTC date")
 		await get_tree().process_frame
 	game._main_menu_button()
 	check(game.highscore_panel._highscore_list.get_child_count() == 1, "return to library displays existing saved score")
+	var old_info := Map.current_info
+	var old_diff := Map.current_difficulty
+	var old_eligible := Scoreboard.record_eligible
+	Map.current_info = info
+	Map.current_difficulty = diff
+	Scoreboard.record_eligible = true
+	game._transition_game_state(game.gamestate_newhighscore)
+	var old_points := Scoreboard.points
+	Scoreboard.points = 200000
+	game._submit_highscore("New leader")
+	check(game.highscore_canvas.visible and game.highscore_panel._highscore_list.get_child_count() == 2,
+		"saving a result keeps leaderboard open and refreshes records")
+	check(game.highscore_panel._highscore_list.get_child(0).get_child(1).text == "New leader",
+		"saved result appears in score order")
+	Scoreboard.points = old_points
+	Scoreboard.record_eligible = old_eligible
+	Map.current_info = old_info
+	Map.current_difficulty = old_diff
+	Highscores._hs_table.clear()
+	panel.load_highscores(info, diff.difficulty_rank)
+	check(panel._empty_message.visible and panel._highscore_list.get_child_count() == 0,
+		"empty leaderboard explains missing records without stale rows")
 	panel.queue_free()
 	await get_tree().process_frame
 	Highscores.HIGHSCORES_FILEPATH = old_path
@@ -520,6 +543,8 @@ func test_result_navigation(info: MapInfo, diff: DifficultyInfo) -> void:
 	for iteration in 12:
 		var result_state: GameState = game.gamestate_newhighscore if iteration % 2 == 0 else game.gamestate_mapcomplete
 		game._transition_game_state(result_state)
+		check(game.highscore_canvas.visible, "leaderboard visible for both result states")
+		check(game.highscore_panel._song_heading.text.contains(info.song_name), "result leaderboard identifies current song")
 		var repeat_button := game.endscore.get_node("Repeat") as UIRaycastButton
 		var menu_button := game.endscore.get_node("MainMenu") as UIRaycastButton
 		check(not (repeat_button.get_node("Collision") as CollisionShape3D).disabled,
@@ -530,6 +555,7 @@ func test_result_navigation(info: MapInfo, diff: DifficultyInfo) -> void:
 		repeat_button.ui_raycast_hit_event(Vector3.ZERO, false, true)
 		await get_tree().process_frame
 		await get_tree().process_frame
+		check(not game.highscore_canvas.visible, "replay hides result leaderboard")
 		check(game.gamestate == game.gamestate_playing and SongClock.running and not game._ending,
 			"result replay starts a fresh session")
 		check(Scoreboard.points == 0 and not game.name_selector_canvas.visible and not game.highscore_keyboard.visible,
@@ -578,6 +604,37 @@ func test_menu_input_transition() -> void:
 	game.right_ui_raycast.controller = game.right_controller
 	input_controller.free()
 
+func test_keyboard_deletion() -> void:
+	var keyboard := game.highscore_keyboard
+	keyboard._show()
+	var keys := keyboard._keyboard
+	keys.set_process(false)
+	var edit := keyboard._text_edit
+	edit.text = "abcdef"
+	edit.set_caret_column(6)
+	keys._on_button_down(keys._backspace_button)
+	await get_tree().process_frame
+	check(edit.text == "abcde", "delete tap removes one character")
+	keys._process(0.2)
+	await get_tree().process_frame
+	check(edit.text == "abcde", "held delete waits before repeating")
+	for i in 6:
+		keys._process(0.2)
+		await get_tree().process_frame
+	check(edit.text.is_empty(), "held delete removes entire input progressively")
+	keys._on_button_up(keys._backspace_button)
+	edit.text = "New text"
+	keys._process(1.0)
+	await get_tree().process_frame
+	check(edit.text == "New text", "releasing delete stops repetition")
+	keys._on_button_down(keys._clear_button)
+	keys._on_button_up(keys._clear_button)
+	check(edit.text.is_empty(), "clear all empties input")
+	keys._on_button_down(keys._backspace_button)
+	keyboard._hide()
+	check(not keys._delete_held, "hiding keyboard cancels held deletion")
+	keys.set_process(true)
+
 func test_scene() -> void:
 	game = load("res://game/BeepSaber_Game.tscn").instantiate()
 	root.add_child(game)
@@ -586,6 +643,7 @@ func test_scene() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	var fixture_path := "res://.tools/fixtures/"
+	await test_keyboard_deletion()
 	DirAccess.make_dir_recursive_absolute(fixture_path)
 	DirAccess.copy_absolute("res://game/data/maps/Songs/TheFatRat_Timelapse/song_q1.egg", fixture_path + "song.ogg")
 	write_json(fixture_path + "Expert.dat", v2_fixture())

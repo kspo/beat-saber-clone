@@ -396,7 +396,7 @@ func _on_preview_download_completed(result: int, response_code: int, _headers: P
 
 func _on_search_button_up() -> void:
 	_keyboard_active = true
-	keyboard._text_edit.text = search_word
+	keyboard._on_clear()
 	keyboard._show()
 	keyboard._text_edit.grab_focus()
 

@@ -540,8 +540,8 @@ func select_downloaded_song(hash_name: String) -> bool:
 	return false
 
 func _on_Search_Button_button_up() -> void:
-	keyboard.visible=true
-	keyboard._text_edit.grab_focus()
+	keyboard._on_clear()
+	keyboard._show()
 
 func _text_input_enter(_text:String = "") -> void:
 	keyboard.visible=false

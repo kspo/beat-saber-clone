@@ -9,6 +9,10 @@ class_name VirtualKeyboard
 @export var allow_newline := false
 
 const B_SIZE := 48
+const DELETE_REPEAT_DELAY := 0.4
+const DELETE_REPEAT_INTERVAL := 0.1
+var _delete_held := false
+var _delete_countdown := 0.0
 
 var NUMBER_LAYOUT := PackedStringArray(["1","2","3","4","5","6","7","8","9","0"])
 
@@ -28,6 +32,7 @@ var BUTTON_LAYOUT_SYMBOLS: Array[PackedStringArray] = [
 
 signal enter_pressed
 signal cancel_pressed
+signal clear_pressed
 
 
 var _all_letter_buttons: Array[Button] = []
@@ -46,6 +51,9 @@ func _create_input_event(b: Button, pressed: bool) -> InputEventKey:
 		return
 	elif (b == _cancel_button):
 		if (!pressed): cancel_pressed.emit()
+		return
+	elif b == _clear_button:
+		if not pressed: clear_pressed.emit()
 		return
 	elif (b == _shift_button):
 		if (pressed): 
@@ -83,6 +91,8 @@ var _last_button_down_hack: Button
 func _on_button_down(b: Button) -> void:
 	if (b == _last_button_down_hack): return
 	_last_button_down_hack = b
+	_delete_held = b == _backspace_button
+	_delete_countdown = DELETE_REPEAT_DELAY
 	
 	var ev := _create_input_event(b, true)
 	if (!ev): return
@@ -91,11 +101,30 @@ func _on_button_down(b: Button) -> void:
 
 func _on_button_up(b: Button) -> void:
 	_last_button_down_hack = null
+	if b == _backspace_button:
+		_delete_held = false
 	
 	var ev := _create_input_event(b, false)
 	if (!ev): return
 	Input.parse_input_event(ev)
 
+
+func cancel_held_keys() -> void:
+	_delete_held = false
+	_last_button_down_hack = null
+
+func _process(delta: float) -> void:
+	if not _delete_held:
+		return
+	if not is_visible_in_tree():
+		cancel_held_keys()
+		return
+	_delete_countdown -= delta
+	if _delete_countdown <= 0.0:
+		_delete_countdown = DELETE_REPEAT_INTERVAL
+		var ev := _create_input_event(_backspace_button, true)
+		ev.echo = true
+		Input.parse_input_event(ev)
 
 func _create_button(parent: Node, text: String, x: float, y: float, w: float = 1.0, h: float = 1.0) -> Button:
 	var b := _reference_button.duplicate() as Button
@@ -128,6 +157,7 @@ var _backspace_button: Button
 var _enter_button: Button
 var _space_button: Button
 var _cancel_button: Button
+var _clear_button: Button
 
 func _create_keyboard_buttons() -> void:
 	_toggle_symbols_button = _create_button(self, "# +=", 2, 4, 1.6)
@@ -135,7 +165,9 @@ func _create_keyboard_buttons() -> void:
 	_shift_button = _create_button(self, "SHIFT", 0.25, 4, 1.75)
 	_shift_button.toggle_mode = true
 	_backspace_button = _create_button(self, "SİL", 10.25, 1, 1.5)
-	_enter_button = _create_button(self, "TAMAM", 10.25, 2, 1.5, 2)
+	_enter_button = _create_button(self, "TAMAM", 10.25, 2, 1.5)
+	_clear_button = _create_button(self, "TÜMÜNÜ\nSİL", 10.25, 3, 1.5)
+	_clear_button.add_theme_font_size_override("font_size", 12)
 	_space_button = _create_button(self, "B O Ş L U K", 3.6, 4, 6.65)
 	_cancel_button = _create_button(self, "KAPAT", 10.25, 0, 1.5)
 	_create_button(self, "/", 10.25, 4, 1.5)
@@ -152,6 +184,7 @@ func _create_keyboard_buttons() -> void:
 	_enter_button.add_theme_stylebox_override("normal", enter_style)
 	_enter_button.add_theme_color_override("font_color", Color("e5fcff"))
 	_backspace_button.add_theme_color_override("font_color", Color("ffa1b5"))
+	_clear_button.add_theme_color_override("font_color", Color("ffa1b5"))
 	_cancel_button.add_theme_color_override("font_color", Color("95abc5"))
 	_reference_button.visible = false
 	_toggle_symbols(false)
